@@ -1,42 +1,28 @@
-#!/bin/sh
+#!/bin/bash
+set -e
+exec 9>.kernelsu-fetch-lock
+flock -n 9 || exit 0
+[[ $(( $(date +%s) - $(stat -c %Y "drivers/kernelsu/.check" 2>/dev/null || echo 0) )) -gt 86400 ]] || exit 0
 
-set -eux
+AUTHOR="tiann"
+REPO="KernelSU"
+VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
 
-git clone --single-branch https://github.com/tiann/KernelSU
-KSU_GIT_VERSION=$(git -C KernelSU rev-list --count HEAD)
-KSU_VERSION=$(expr 10000 + $KSU_GIT_VERSION + 200)
-rm -fr drivers/kernelsu
-mv KernelSU/kernel drivers/kernelsu
-rm -fr KernelSU
+if [[ -f drivers/kernelsu/.version && *$(cat drivers/kernelsu/.version)* == *$VERSION* ]]; then
+	touch drivers/kernelsu/.check
+	exit 0
+fi
 
-sed -i -e 's/default y/default n/g' drivers/kernelsu/Kconfig
+# printf "$REPO updating to $((10000+$VERSION+200))\n"
+rm -rf drivers/kernelsu
+mkdir -p drivers/kernelsu
+cd drivers/kernelsu
+wget -q -O - https://github.com/$AUTHOR/$REPO/archive/refs/heads/main.tar.gz | tar -xz --strip=2 "$REPO-main/kernel"
+echo $VERSION >> .version
+touch .check
 
-patch -p1 --ignore-whitespace --force << 'EOF'
-:100644 100644 5ba201cf259f 000000000000 M	drivers/kernelsu/Makefile
-
-diff --git a/drivers/kernelsu/Makefile b/drivers/kernelsu/Makefile
-index 5ba201cf259f..247a2d0c4d57 100644
---- a/drivers/kernelsu/Makefile
-+++ b/drivers/kernelsu/Makefile
-@@ -14,13 +14,3 @@ obj-y += kernel_compat.o
- obj-y += selinux/
--# .git is a text file while the module is imported by 'git submodule add'.
--ifeq ($(shell test -e $(srctree)/$(src)/../.git; echo $$?),0)
--KSU_GIT_VERSION := $(shell cd $(srctree)/$(src); /usr/bin/env PATH="$$PATH":/usr/bin:/usr/local/bin git rev-list --count HEAD)
--# ksu_version: major * 10000 + git version + 200 for historical reasons
--$(eval KSU_VERSION=$(shell expr 10000 + $(KSU_GIT_VERSION) + 200))
--$(info -- KernelSU version: $(KSU_VERSION))
--ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
--else # If there is no .git file, the default version will be passed.
--$(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU a git submodule!")
- ccflags-y += -DKSU_VERSION=16
--endif
- 
-EOF
-
-sed -i -e "s/KSU_VERSION=16/KSU_VERSION=$KSU_VERSION/g" drivers/kernelsu/Makefile
-
-DRIVER_MAKEFILE=drivers/Makefile
-DRIVER_KCONFIG=drivers/Kconfig
-grep -q "kernelsu" "$DRIVER_MAKEFILE" || printf "obj-\$(CONFIG_KSU) += kernelsu/\n" >> "$DRIVER_MAKEFILE"
-grep -q "kernelsu" "$DRIVER_KCONFIG" || sed -i "/endmenu/i\\source \"drivers/kernelsu/Kconfig\"" "$DRIVER_KCONFIG"
+# You can patch for your kernel here
+echo "" >> Makefile
+sed -i '/warning /d' Makefile
+sed -i '/DKSU_VERSION/d' Makefile
+echo "ccflags-y += -DKSU_VERSION=$((10000 + $VERSION + 200))" >> Makefile
