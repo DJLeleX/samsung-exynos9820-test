@@ -13,7 +13,7 @@ then
 	else
 		nver="$1"
 	fi
-	magisk_link="https://github.com/HuskyDG/magisk-files/releases/download/${nver}/app-release.apk"
+	magisk_link="https://github.com/HuskyDG/magisk-files/releases/download/${nver}/${nver}.apk"
 elif [ "x$1" = "xcanary" ]
 then
 	nver="canary"
