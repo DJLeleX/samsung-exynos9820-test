@@ -9,11 +9,13 @@ ver="$(cat "$DIR/magisk_version" 2>/dev/null || echo -n 'none')"
 if [[ "x$1" =~ x.*delta ]]
 then
 	if [ "$1" = "delta" ]; then
-		nver="$(curl -s https://github.com/HuskyDG/magisk-files/releases | grep -m 1 -Poe 'v[0-9]{2}\.[0-9]{1}-kitsune-[0-9]{1}')"
+		#nver="$(curl -s https://github.com/HuskyDG/magisk-files/releases | grep -m 1 -Poe 'v[0-9]{2}\.[0-9]{1}-kitsune-[0-9]{1}')"
+		nver="$(curl -s https://github.com/HuskyDG/magisk-files/releases | grep -m 1 -Poe 'tree/[0-9]{10}' | grep -m 1 -Poe '[0-9]{10}')"
 	else
 		nver="$1"
 	fi
-	magisk_link="https://github.com/HuskyDG/magisk-files/releases/download/${nver}/${nver/v/}.apk"
+	#magisk_link="https://github.com/HuskyDG/magisk-files/releases/download/${nver}/${nver/v/}.apk"
+	magisk_link="https://github.com/HuskyDG/magisk-files/releases/download/${nver}/app-release.apk"
 elif [ "x$1" = "xcanary" ]
 then
 	nver="canary"
