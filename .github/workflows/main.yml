@@ -26,28 +26,29 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: sudo apt-get install -y -qq libtinfo5 ccache
 
-
       - name: Disable compression in ccache and set ccache path
         run: ccache -o compression=false -o cache_dir=$HOME/.ccache
 
       - name: Prepare ccache timestamp
         id: ccache_timestamp
         run: |
-          echo "::set-output name=FULL_DATE::$(date +'%Y-%m-%d')"
-          echo "::set-output name=MONTH_DATE::$(date +'%Y-%m')"
+          echo "FULL_DATE=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "MONTH_DATE=$(date +'%Y-%m')" >> $GITHUB_ENV
 
       - name: Create cache key from ${{ matrix.model }}
         id: ccache_model_key
-        run: echo "::set-output name=KEY::$( echo ${{ matrix.model }} | tr ',' '_' )"
+        run: |
+          KEY=$(echo "${{ matrix.model }}" | tr ',' '_')
+          echo "KEY=$KEY" >> $GITHUB_ENV
 
       - name: Cache ccache files
         uses: actions/cache@v3
         with:
           path: ~/.ccache
-          key: ccache-${{ env.TOOLCHAIN }}-${{ steps.ccache_model_key.outputs.KEY }}-${{ steps.ccache_timestamp.outputs.FULL_DATE }}
+          key: ccache-${{ env.TOOLCHAIN }}-${{ env.KEY }}-${{ env.FULL_DATE }}
           restore-keys: |
-            ccache-${{ env.TOOLCHAIN }}-${{ steps.ccache_model_key.outputs.KEY }}-${{ steps.ccache_timestamp.outputs.MONTH_DATE }}
-            ccache-${{ env.TOOLCHAIN }}-${{ steps.ccache_model_key.outputs.KEY }}-
+            ccache-${{ env.TOOLCHAIN }}-${{ env.KEY }}-${{ env.MONTH_DATE }}
+            ccache-${{ env.TOOLCHAIN }}-${{ env.KEY }}-
             ccache-${{ env.TOOLCHAIN }}-
 
       - name: Kernel Configure
@@ -107,6 +108,7 @@ jobs:
 
       - name: Create CruelKernel images for ${{ matrix.model }}
         run: ./cruelbuild :mkimg
+
       - name: Create CruelKernel installer for ${{ matrix.model }}
         if: env.INSTALLER == 'yes'
         run: ./cruelbuild :pack
@@ -116,23 +118,26 @@ jobs:
         run: |
           mkdir -p installer && cd installer
           unzip ../CruelKernel.zip
+
+      # Updated to use `upload-artifact@v4`
       - name: Upload Kernel Zip
         if: env.INSTALLER == 'yes'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: CruelKernel-${{ matrix.model }}
           path: installer/*
           if-no-files-found: error
+
       - name: Upload Kernel Images
         if: env.INSTALLER != 'yes'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: CruelKernel-${{ matrix.model }}
           path: '*.img'
           if-no-files-found: error
 
       - name: Upload Kernel Info
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ConfigurationInfo-${{ matrix.model }}
           path: config.*
