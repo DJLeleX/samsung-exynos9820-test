@@ -15,6 +15,9 @@ then
 	elif [ "$1" = "delta-beta" ]; then
 		nver="$(curl -s https://github.com/HuskyDG/magisk-files/releases | grep -m 1 -Poe 'tree/[0-9]{10}' | grep -m 1 -Poe '[0-9]{10}')"
 		magisk_link="https://github.com/HuskyDG/magisk-files/releases/download/${nver}/app-release.apk"
+	elif [ "$1" = "delta-1q23lyc45" ]; then
+		nver="$(curl -s https://github.com/1q23lyc45/KitsuneMagisk/releases | grep -m 1 -Poe 'v[0-9]+\.[0-9]+-[a-z0-9-]+' | head -n 1)"
+		magisk_link="https://github.com/1q23lyc45/KitsuneMagisk/releases/download/${nver}/app-release.apk"
 	fi
 elif [ "x$1" = "xcanary" ]
 then
