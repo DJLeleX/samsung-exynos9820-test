@@ -56,7 +56,7 @@ jobs:
           set -e -o pipefail
           ./cruelbuild config                    \
                        model=${{ matrix.model }} \
-                       name="Cruel-devel"        \
+                       name="Cruel-delta-devel"        \
                        toolchain=$TOOLCHAIN      \
                        +magisk=delta-1q23lyc45   \
                        +nohardening              \
