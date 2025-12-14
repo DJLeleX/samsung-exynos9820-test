@@ -6,9 +6,9 @@ flock -n 9 || exit 0
 
 AUTHOR="rsuntk"
 REPO="KernelSU"
-VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
-#LATEST_RELEASE=$(curl -s -k "https://api.github.com/repos/$AUTHOR/$REPO/releases/latest" | grep -oP '"tag_name": "\K[^"]+')
-#VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1&sha=$LATEST_RELEASE" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
+#VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
+LATEST_RELEASE=$(curl -s -k "https://api.github.com/repos/$AUTHOR/$REPO/releases/latest" | grep -oP '"tag_name": "\K[^"]+')
+VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1&sha=$LATEST_RELEASE" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
 
 if [[ -f drivers/kernelsu/.version && *$(cat drivers/kernelsu/.version)* == *$VERSION* ]]; then
 	touch drivers/kernelsu/.check
@@ -19,8 +19,8 @@ fi
 rm -rf drivers/kernelsu
 mkdir -p drivers/kernelsu
 cd drivers/kernelsu
-wget -q -O - https://github.com/$AUTHOR/$REPO/archive/refs/heads/main.tar.gz | tar -xz --strip=2 "$REPO-main/kernel"
-#wget -q -O - "https://github.com/$AUTHOR/$REPO/archive/refs/tags/$LATEST_RELEASE.tar.gz" | tar -xz --strip=2 "$REPO-${LATEST_RELEASE#v}/kernel"
+#wget -q -O - https://github.com/$AUTHOR/$REPO/archive/refs/heads/main.tar.gz | tar -xz --strip=2 "$REPO-main/kernel"
+wget -q -O - "https://github.com/$AUTHOR/$REPO/archive/refs/tags/$LATEST_RELEASE.tar.gz" | tar -xz --strip=2 "$REPO-${LATEST_RELEASE#v}/kernel"
 echo $VERSION >> .version
 touch .check
 
