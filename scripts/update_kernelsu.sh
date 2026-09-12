@@ -4,9 +4,9 @@ exec 9>.kernelsu-fetch-lock
 flock -n 9 || exit 0
 [[ $(( $(date +%s) - $(stat -c %Y "drivers/kernelsu/.check" 2>/dev/null || echo 0) )) -gt 86400 ]] || exit 0
 
-AUTHOR="rsuntk"
+AUTHOR="KOWX712"
 REPO="KernelSU"
-COMMIT="648e5988cf421172769f80ce07f86331b548c053"
+COMMIT="97e32a83e0158d916ad61ed799cacd33af0a4065"
 #VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
 #LATEST_RELEASE=$(curl -s -k "https://api.github.com/repos/$AUTHOR/$REPO/releases/latest" | grep -oP '"tag_name": "\K[^"]+')
 #VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1&sha=$LATEST_RELEASE" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
