@@ -11,7 +11,6 @@ REPO="KernelSU"
 #VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
 #LATEST RELEASE
 LATEST_RELEASE=$(curl -s -k "https://api.github.com/repos/$AUTHOR/$REPO/releases/latest" | grep -oP '"tag_name": "\K[^"]+')
-VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1&sha=$LATEST_RELEASE" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
 #HARDCODED COMMIT
 #COMMIT="648e5988cf421172769f80ce07f86331b548c053"
 #VERSION=`curl -s -I -k "https://api.github.com/repos/$AUTHOR/$REPO/commits?per_page=1&sha=$COMMIT" | sed -n '/^[Ll]ink:/ s/.*"next".*page=\([0-9]*\).*"last".*/\1/p'`
@@ -31,11 +30,18 @@ cd drivers/kernelsu
 wget -q -O - "https://github.com/$AUTHOR/$REPO/archive/refs/tags/$LATEST_RELEASE.tar.gz" | tar -xz --strip=2 --wildcards "$REPO-*/kernel"
 #HARDCODED COMMIT
 #wget -q -O - "https://github.com/$AUTHOR/$REPO/archive/$COMMIT.tar.gz" | tar -xz --strip=2 "$REPO-$COMMIT/kernel"
-echo $VERSION >> .version
+#EXTRACT VERSION FROM MAKEFILE
+VERSION=$(grep -hE -- '-DKSU_VERSION=[0-9]+' Makefile | grep -oE '[0-9]+' | tail -n1)
+if [[ -z "$VERSION" ]]; then
+    echo "ERROR: Could not extract KSU_VERSION from KernelSU Makefile" >&2
+    exit 1
+fi
+
+echo "$VERSION" > .version
 touch .check
 
-# You can patch for your kernel here
-echo "" >> Makefile
-sed -i '/warning /d' Makefile
-sed -i '/DKSU_VERSION/d' Makefile
-echo "ccflags-y += -DKSU_VERSION=$((30000 + $VERSION + 200))" >> Makefile
+# Apply your kernel-specific Makefile modifications
+sed -i '/warning /d; /DKSU_VERSION/d' Makefile
+printf '\nccflags-y += -DKSU_VERSION=%s\n' "$VERSION" >> Makefile
+
+echo "KernelSU KSU_VERSION: $VERSION"
