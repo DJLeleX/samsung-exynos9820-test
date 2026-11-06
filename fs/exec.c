@@ -1987,8 +1987,11 @@ static int exec_binprm(struct linux_binprm *bprm)
 
 #ifdef CONFIG_KSU
 extern bool ksu_execveat_hook __read_mostly;
-extern int ksu_handle_execveat(int *fd, struct filename **filename_ptr, void *argv,
-			void *envp, int *flags);
+__attribute__((hot))
+extern int ksu_handle_execveat_ksud(int *fd, struct filename **filename_ptr,
+				struct user_arg_ptr *argv,
+				struct user_arg_ptr *envp, int *flags);
+__attribute__((hot))
 extern int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
 				 void *argv, void *envp, int *flags);
 #endif
@@ -2007,10 +2010,17 @@ static int do_execveat_common(int fd, struct filename *filename,
 	int retval;
 
 #ifdef CONFIG_KSU
+	/*
+	 * Same as ksu_handle_execveat(), but split in two:
+	 *  - ksud needs the real argv/envp (struct user_arg_ptr) to detect
+	 *    init second_stage and zygote; it stops itself after boot.
+	 *  - sucompat (su -> ksud) reads argv as a kernel char ** for su
+	 *    logging, not as a struct user_arg_ptr, so it gets NULL.
+	 * Hooking here covers execve and execveat, native and 32-bit compat.
+	 */
 	if (unlikely(ksu_execveat_hook))
-		ksu_handle_execveat(&fd, &filename, &argv, &envp, &flags);
-	else
-		ksu_handle_execveat_sucompat(&fd, &filename, &argv, &envp, &flags);
+		ksu_handle_execveat_ksud(&fd, &filename, &argv, &envp, &flags);
+	ksu_handle_execveat_sucompat(&fd, &filename, NULL, NULL, &flags);
 #endif
 
 	if (IS_ERR(filename))
