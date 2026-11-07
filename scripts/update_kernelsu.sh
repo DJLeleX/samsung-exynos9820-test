@@ -18,9 +18,9 @@ if [[ -z "$LATEST_TAG" ]]; then
 fi
 
 #LATEST COMMIT
-REF="legacy"
-#LATEST RELEASE (v3.4.0-legacy does not build on 4.14: it calls strscpy_pad(), fixed on the branch since)
-#REF="$LATEST_TAG"
+#REF="legacy"
+#LATEST RELEASE (v3.4.0-legacy needs the strscpy_pad fix below to build on 4.14)
+REF="$LATEST_TAG"
 #HARDCODED COMMIT
 #REF="b933b1f728116a456fbebf27b6a8772a640cdf23"
 
@@ -63,6 +63,8 @@ touch .check
 # (legacy builds from Kbuild, its Makefile is only used for out-of-tree modules;
 # drivers/kernelsu is not a git checkout, so pass the version through the
 # override variables Kbuild checks, before it reads them)
+# v3.4.0-legacy: strscpy_pad() does not exist before Linux 5.2, use the compat wrapper
+sed -i 's/\bstrscpy_pad(/__strscpy_pad(/' policy/allowlist.c
 sed -i '/warning /d' Kbuild
 sed -i "1i KSU_VERSION_OVERRIDE := $KSU_VERSION\nKSU_VERSION_TAG_OVERRIDE := $LATEST_TAG\n" Kbuild
 
